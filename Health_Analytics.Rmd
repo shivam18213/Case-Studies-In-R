@@ -1,0 +1,188 @@
+---
+title: "Health Analytics"
+author: "Shivam Batra"
+date: "10/31/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Dataset -> https://www.kaggle.com/uciml/pima-indians-diabetes-database 
+
+# Dataset Description
+
+This dataset is originally from the National Institute of Diabetes and Digestive and Kidney Diseases. The objective of the dataset is to diagnostically predict whether or not a patient has diabetes, based on certain diagnostic measurements included in the dataset. Several constraints were placed on the selection of these instances from a larger database. In particular, all patients here are females at least 21 years old of Pima Indian heritage.
+
+Dataset Content
+
+
+```{r}
+library(tidyverse) #Required for analysis, visualization
+library(ggplot2) #Required for visualization
+library(caret) # ML package for various methods
+```
+
+#Clearing null rows 
+
+The datasets consists of several medical predictor variables and one target variable, Outcome. Predictor variables includes the number of pregnancies the patient has had, their BMI, insulin level, age, and so on.
+
+```{r}
+diab = read.csv("C:\\Users\\hp\\Desktop\\datasets\\diabetes.csv")
+diab = na.omit(diab)
+```
+
+#Dataset Details:
+
+```{r}
+head(diab) # Elements of first few rows
+tail(diab) # Elements of Last few rows
+colnames(diab) #Names of Columns which are the names of predictors and outcome variables
+str(diab) # Structure of the dataset
+```
+
+#Descriptive statistics
+```{r}
+summary(diab)
+```
+
+#Data Visualization
+
+```{r}
+par(mfrow = c(2,2))
+hist(diab$Pregnancies)
+hist(diab$Age)
+hist(diab$BMI)
+hist(diab$Glucose)
+```
+
+
+#Effect of Glucose on Diabetes
+```{r}
+p1<-ggplot(diab,aes(x=Age,y=Glucose,col=Outcome))+geom_point()+geom_smooth(method="loess", se=T)+facet_grid(.~Outcome)
+p1
+```
+
+
+
+
+
+Relation between Glucose, Blood Pressure, Age, Pregnancy
+```{r}
+p3<-ggplot(diab,aes(x=Age, y=Pregnancies, size=Glucose, fill=BloodPressure))+geom_point(alpha=0.2)+
+  facet_grid(.~Outcome)+geom_jitter(width = 0.4)+scale_x_continuous(limits = c(18, 80))
+p3
+```
+
+```{r}
+for(col in names(diab)) {
+  print(col)
+  print(cor(diab[[col]],diab$Outcome))
+}
+```
+
+
+#Linear Regression
+
+Using all features
+
+```{r}
+model <- lm(Outcome ~ .,data = diab)
+summary(model)
+```
+
+
+```{r}
+names <- c("Pregnancies", "Glucose","BloodPressure", "SkinThickness", "Insulin", "BMI", "DiabetesPedigreeFunction" ,"Age" )
+for(col in names) {
+print(col)
+model <- lm(Outcome ~ diab[[col]],data=diab)
+print("RSE")
+print(sigma(model))
+print("Prediction Percentage Error")
+print(sigma(model)*100/mean(diab$outcome))
+}
+```
+
+We Observe RSE value of every column is below 0.5 therefore, we cannot neglet any attribute
+
+
+# Limiting Featues and dividing dataset
+Checking for limited features and further dividing dataset into 80% training and 20% testing
+
+```{r}
+diab_subset <- subset(diab,select=c("Glucose","BMI","Outcome","Age"))
+model1 <- lm(Outcome ~ .,data=diab_subset)
+summary(model1)
+```
+
+Here we have further decreased the RSE value.
+```{r}
+set.seed(7)
+train_samples <- createDataPartition(diab_subset$Outcome, p=0.80, list=FALSE)
+training <- diab_subset[train_samples,]
+testing <- diab_subset[-train_samples,]
+head(training)
+head(testing)
+```
+
+
+
+```{r}
+model2 <- lm(Outcome~., data=training)
+summary(model2)
+```
+
+```{r}
+pred <- model2%>%predict(testing)
+RMSE <- RMSE(pred,testing$Outcome)
+RMSE
+```
+#Refrences:
+
+https://medium.com/analytics-vidhya/an-extensive-guide-for-health-care-data-analysis-using-r-machine-learning-algorithms-glm-1959eba2e6ab 
+
+#Inferance:
+
+1. From the distribution graphs, Age and number of times pregnant are not in normal distributions as expected since the underlying population should not be normally distributed either.
+
+Glucose level and BMI are following a normal distribution.
+he above plot also shows the trend modeled through Loess method for the data provided.
+
+2. Linear regression model is applied to the PIMA Indian dataset with the same experimental setup. We used this approach to model a relationship between a dependent variable, that is, outcome in our case, and one or more independent variables. The autonomous variable response affects a lot on the target/dependent variable.
+
+
+3. Then we worked on the correlation: 
+
+[1] "Pregnancies"
+[1] 0.2218982
+[1] "Glucose"
+[1] 0.4665814
+[1] "BloodPressure"
+[1] 0.06506836
+[1] "SkinThickness"
+[1] 0.07475223
+[1] "Insulin"
+[1] 0.130548
+[1] "BMI"
+[1] 0.2926947
+[1] "DiabetesPedigreeFunction"
+[1] 0.1738441
+[1] "Age"
+[1] 0.238356
+
+
+4. Model1 -> Concidered all the features of dataset. RSE = 0.4002
+
+5. Model2 -> Concidered only Glucose, BMI and Age. The dataset was further divided into 80 percent training and 20 percent testing. 
+
+the training RSE was 0.4078 while testing RSE was found to be 0.4099823
+
+6. Thus model2 performed better since it considered only limited features.
+
+
+
+
+
+
