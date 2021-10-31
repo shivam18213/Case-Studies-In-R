@@ -5,4 +5,4 @@
    Dataset -> diabetes.csv </br>
 2. Sports Analytics </br>
    Data Visualisation And Linear Regression<br>
-   Dataset -> diabetes.csv </br>
+   Dataset -> https://github.com/beanumber/baseball_R  </br>
